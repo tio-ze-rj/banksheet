@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "exceljs": "^4.4.0",
-    "pdf-parse": "^1.1.1"
+    "pdfjs-dist": "^5.5.207"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

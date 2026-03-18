@@ -1,11 +1,15 @@
 import type { BankParser } from '../types';
 import { bradescoCartaoParser } from './BR/bradesco-cartao/index';
+import { interCartaoParser } from './BR/inter-cartao/index';
 import { itauCartaoParser } from './BR/itau-cartao/index';
+import { nubankCartaoParser } from './BR/nubank-cartao/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
   bradescoCartaoParser,
+  interCartaoParser,
   itauCartaoParser,
+  nubankCartaoParser,
 ];
 
 export function getParserByName(name: string): BankParser | undefined {

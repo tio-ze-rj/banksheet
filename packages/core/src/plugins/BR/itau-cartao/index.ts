@@ -1,4 +1,5 @@
 import type { BankParser, Transaction } from '../../../types';
+import { parseBRAmount } from '../utils';
 
 export const itauCartaoParser: BankParser = {
   name: 'Itaú Cartão',
@@ -53,9 +54,7 @@ export const itauCartaoParser: BankParser = {
         descEnd = simpleMatch.index!;
       }
 
-      // Convert BR format (1.234,56) to number
-      rawAmount = rawAmount.replace(/\./g, '').replace(',', '.');
-      const numericAmount = parseFloat(rawAmount);
+      const numericAmount = parseBRAmount(rawAmount);
 
       // Credit card: positive in statement = expense (negative amount)
       // Negative in statement = refund/credit (positive amount)
@@ -88,11 +87,10 @@ export const itauCartaoParser: BankParser = {
     // formatted as a transaction. Extract it from the summary section.
     const iofMatch = text.match(/Repassede IOF em R\$\s*(\d{1,3}(?:\.\d{3})*,\d{2})/);
     if (iofMatch) {
-      let iofAmount = iofMatch[1].replace(/\./g, '').replace(',', '.');
       transactions.push({
         date: `${currentYear}-01-01`, // no specific date in summary
         description: 'IOF REPASSE TRANSAÇÕES INTERNACIONAIS',
-        amount: -parseFloat(iofAmount),
+        amount: -parseBRAmount(iofMatch[1]),
         currency: 'BRL',
         type: 'debit' as const,
         raw: iofMatch[0],

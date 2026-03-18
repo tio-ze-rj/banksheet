@@ -15,6 +15,7 @@ export interface ParseArgs {
   format: ExportOptions['format'];
   output?: string;
   bank?: string;
+  password?: string;
 }
 
 export async function parse(args: ParseArgs): Promise<void> {
@@ -23,7 +24,7 @@ export async function parse(args: ParseArgs): Promise<void> {
   for (const file of args.files) {
     const filePath = path.resolve(file);
     const buffer = fs.readFileSync(filePath);
-    const text = await extractText(buffer);
+    const text = await extractText(buffer, args.password);
     const result = parseStatement(text, plugins, args.bank);
 
     console.error(`[${result.bank}] ${file}: ${result.transactions.length} transactions`);

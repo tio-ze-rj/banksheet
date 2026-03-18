@@ -1,4 +1,5 @@
 import type { BankParser, Transaction } from '../../../types';
+import { parseBRAmount } from '../utils';
 
 export const bradescoCartaoParser: BankParser = {
   name: 'Bradesco Cartão',
@@ -58,7 +59,7 @@ export const bradescoCartaoParser: BankParser = {
       const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
       // Parse amount: BR format (1.234,56) -> number
-      const numericAmount = parseFloat(rawAmount.replace(/\./g, '').replace(',', '.'));
+      const numericAmount = parseBRAmount(rawAmount);
 
       // Credit card: positive = expense (negative), trailing `-` = payment/credit (positive)
       const isCredit = !!creditSign;

@@ -197,6 +197,38 @@
       border-radius: 0 3px 0 0;
     }
 
+    /* Password field */
+    .password-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .password-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .password-input {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      width: 200px;
+      transition: border-color 0.15s;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
     /* Parsers list */
     .parsers-bar {
       display: flex;
@@ -481,6 +513,11 @@
         <div class="upload-subtitle">or <strong id="browseLink">browse files</strong></div>
         <input type="file" accept=".pdf" class="upload-input" id="fileInput">
         <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+      </div>
+
+      <div class="password-bar" id="passwordBar">
+        <label for="pdfPassword" class="password-label">PDF Password:</label>
+        <input type="password" id="pdfPassword" class="password-input" placeholder="Leave empty if none">
       </div>
 
       <div class="parsers-bar" id="parsersBar"></div>

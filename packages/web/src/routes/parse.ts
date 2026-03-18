@@ -12,7 +12,8 @@ router.post('/parse', upload.single('pdf'), async (req, res) => {
       return;
     }
 
-    const text = await extractText(req.file.buffer);
+    const password = req.body?.password || undefined;
+    const text = await extractText(req.file.buffer, password);
     const result = parseStatement(text, plugins);
 
     res.json({

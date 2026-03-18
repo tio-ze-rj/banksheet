@@ -97,6 +97,8 @@
 
     var formData = new FormData();
     formData.append('pdf', file);
+    var password = document.getElementById('pdfPassword').value;
+    if (password) formData.append('password', password);
 
     fetch('/api/parse', { method: 'POST', body: formData })
       .then(function (r) {

@@ -17,9 +17,11 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(2);
+    expect(list).toHaveLength(4);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
+    expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Itaú Cartão', country: 'BR' });
+    expect(list).toContainEqual({ name: 'Nubank Cartão', country: 'BR' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -56,6 +58,26 @@ describe('detectBank', () => {
   it('detects Bradesco by banco.bradesco URL', () => {
     const result = detectBank('SAIBA MAIS EM NOSSO SITE BANCO.BRADESCO/MEUCARTAO', plugins);
     expect(result?.name).toBe('Bradesco Cartão');
+  });
+
+  it('detects Nubank by Nu Pagamentos S.A. text', () => {
+    const result = detectBank('Nu Pagamentos S.A. CNPJ 18.236.120/0001-58', plugins);
+    expect(result?.name).toBe('Nubank Cartão');
+  });
+
+  it('detects Nubank by nubank keyword', () => {
+    const result = detectBank('conta Nubank para pagamento', plugins);
+    expect(result?.name).toBe('Nubank Cartão');
+  });
+
+  it('detects Inter by BANCO INTER S/A text', () => {
+    const result = detectBank('BENEFICIÁRIO BANCO INTER S/A CNPJ: 00.416.968', plugins);
+    expect(result?.name).toBe('Inter Cartão');
+  });
+
+  it('detects Inter by bancointer.com.br URL', () => {
+    const result = detectBank('acesse: www.bancointer.com.br', plugins);
+    expect(result?.name).toBe('Inter Cartão');
   });
 
   it('returns undefined for unknown text', () => {
