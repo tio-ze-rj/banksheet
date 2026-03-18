@@ -1,0 +1,16 @@
+{
+  "name": "banksheet",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "dev": "npm run dev --workspace=packages/cli"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

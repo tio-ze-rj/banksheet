@@ -1,0 +1,26 @@
+{
+  "name": "@banksheet/cli",
+  "version": "0.1.0",
+  "description": "Bank statement CLI tool",
+  "bin": {
+    "banksheet": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@banksheet/core": "0.1.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "license": "MIT"
+}

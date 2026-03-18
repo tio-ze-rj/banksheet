@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+.DS_Store
+.env
+
+# Local/personal files
+.claude/
+.idea/
+reference/
+extrato.pdf
