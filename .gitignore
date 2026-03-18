@@ -6,6 +6,8 @@ coverage/
 .env
 
 # Local/personal files
+CLAUDE.md
+docs/
 .claude/
 .idea/
 reference/
