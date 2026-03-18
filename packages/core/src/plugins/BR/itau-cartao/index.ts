@@ -1,4 +1,4 @@
-import type { BankParser, Transaction } from '../../types';
+import type { BankParser, Transaction } from '../../../types';
 
 export const itauCartaoParser: BankParser = {
   name: 'Itaú Cartão',

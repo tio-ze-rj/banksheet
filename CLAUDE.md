@@ -10,7 +10,7 @@ Open source CLI + web tool that parses bank/credit card statement PDFs into CSV,
 - **Interfaces:** CLI (primary) + local web UI (secondary)
 - **No AI:** Pure regex/text parsing only
 - **Monorepo:** npm workspaces (`packages/core`, `packages/cli`, `packages/web`)
-- **Plugin system:** `packages/core/src/plugins/{bank}/index.ts`
+- **Plugin system:** `packages/core/src/plugins/{CC}/{bank}/index.ts` (CC = ISO 3166-1 alpha-2 country code)
 - **No database:** Stateless - parse and export, nothing stored
 
 ## Key Dependencies

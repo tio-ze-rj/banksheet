@@ -10,3 +10,5 @@ coverage/
 .idea/
 reference/
 extrato.pdf
+BradescoCartoes*.pdf
+*-raw.txt

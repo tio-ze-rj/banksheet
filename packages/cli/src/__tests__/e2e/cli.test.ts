@@ -23,9 +23,14 @@ describe('CLI E2E', () => {
       expect(stdout).toContain('BR');
     });
 
+    it('shows Bradesco Cartão', async () => {
+      const { stdout } = await run(['list']);
+      expect(stdout).toContain('Bradesco Cartão');
+    });
+
     it('shows parser count', async () => {
       const { stdout } = await run(['list']);
-      expect(stdout).toContain('1 parser(s)');
+      expect(stdout).toContain('2 parser(s)');
     });
   });
 

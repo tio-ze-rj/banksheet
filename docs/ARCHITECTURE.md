@@ -12,16 +12,21 @@ packages/
       detector.ts      # Auto-detect bank by running each plugin's detect()
       plugins/
         index.ts       # Plugin registry (plugins[], getParserByName, listParsers)
-        itau-cartao/   # First plugin (Brazilian Itaú Cartão statements)
-          index.ts     # implements BankParser
-      __tests__/       # Unit + integration tests (48 tests, 100% coverage)
+        BR/            # Brazilian bank parsers (ISO 3166-1 alpha-2)
+          bradesco-cartao/
+            index.ts   # Bradesco credit card parser
+            README.md  # Detection, quirks, implementation date
+          itau-cartao/
+            index.ts   # Itaú credit card parser
+            README.md  # Detection, quirks, implementation date
+      __tests__/       # Unit + integration tests (65 tests)
   cli/                 # @banksheet/cli — terminal interface (commander)
     src/
       index.ts         # Entry point, registers commands
       commands/
         parse.ts       # banksheet parse <file> [options]
         list.ts        # banksheet list (show available plugins)
-      __tests__/       # E2E tests via child_process (7 tests)
+      __tests__/       # E2E tests via child_process (8 tests)
   web/                 # @banksheet/web — placeholder for phase 2
 reference/             # Original parsing code from perasapi (read-only reference)
 docs/                  # Project documentation

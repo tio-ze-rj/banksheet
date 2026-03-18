@@ -1,8 +1,10 @@
 import type { BankParser } from '../types';
-import { itauCartaoParser } from './itau-cartao/index';
+import { bradescoCartaoParser } from './BR/bradesco-cartao/index';
+import { itauCartaoParser } from './BR/itau-cartao/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
+  bradescoCartaoParser,
   itauCartaoParser,
 ];
 
