@@ -27,5 +27,7 @@ jobs:
       - run: npm ci
       - run: npm run build -w packages/core
       - run: npm run build -w packages/cli
+      - run: npm run build -w packages/web
       - run: npm run test -w packages/core
       - run: npm run test -w packages/cli
+      - run: npm run test -w packages/web

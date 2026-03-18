@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>banksheet — Statement Parser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #FAFAF8;
+      --bg-surface: #FFFFFF;
+      --bg-surface-hover: #F5F5F0;
+      --bg-elevated: #FFFFFF;
+      --border: #E8E6E1;
+      --border-strong: #D4D1C9;
+      --text-primary: #1A1A18;
+      --text-secondary: #6B6960;
+      --text-tertiary: #9C9889;
+      --accent: #0D7C4A;
+      --accent-light: #E8F5EE;
+      --accent-hover: #0A6B3E;
+      --negative: #C4320A;
+      --negative-light: #FEF0EC;
+      --positive: #0D7C4A;
+      --positive-light: #E8F5EE;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --font-sans: 'Instrument Sans', -apple-system, sans-serif;
+      --font-mono: 'DM Mono', 'Menlo', monospace;
+      --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    [data-theme="dark"] {
+      --bg: #141413;
+      --bg-surface: #1C1C1A;
+      --bg-surface-hover: #252523;
+      --bg-elevated: #222220;
+      --border: #2E2E2A;
+      --border-strong: #3D3D37;
+      --text-primary: #F0EDE6;
+      --text-secondary: #9C9889;
+      --text-tertiary: #6B6960;
+      --accent: #2DD47B;
+      --accent-light: #0D2A1A;
+      --accent-hover: #24B868;
+      --negative: #F97066;
+      --negative-light: #2A1410;
+      --positive: #2DD47B;
+      --positive-light: #0D2A1A;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    html { font-size: 15px; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: var(--grain);
+      background-size: 128px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.5;
+    }
+
+    /* Layout */
+    .app { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .logo h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .logo span {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+
+    .theme-toggle {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 10px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+
+    .theme-toggle:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-surface);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .upload-zone.dragover { transform: scale(1.005); }
+
+    .upload-zone.processing {
+      border-color: var(--accent);
+      pointer-events: none;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .upload-icon svg { width: 24px; height: 24px; }
+
+    .upload-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .upload-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .upload-subtitle strong {
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .upload-input { display: none; }
+
+    /* Progress bar */
+    .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s;
+      border-radius: 0 3px 0 0;
+    }
+
+    /* Parsers list */
+    .parsers-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .parsers-label {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .parser-tag {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--bg-surface-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+    }
+
+    /* Results Section */
+    .results {
+      display: none;
+      margin-top: 32px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .results.visible { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Summary Cards */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .summary-card .label {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+
+    .summary-card .value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-card .value.negative { color: var(--negative); }
+    .summary-card .value.positive { color: var(--positive); }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toolbar-left {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .toolbar-left strong { color: var(--text-primary); font-weight: 600; }
+
+    .export-group { display: flex; gap: 6px; }
+
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+    .btn svg { width: 14px; height: 14px; }
+
+    /* Table */
+    .table-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead { border-bottom: 2px solid var(--border); }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: color 0.15s;
+      position: relative;
+    }
+
+    th:hover { color: var(--text-primary); }
+
+    th.sorted { color: var(--accent); }
+
+    th .sort-arrow {
+      display: inline-block;
+      margin-left: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      font-size: 0.65rem;
+    }
+
+    th:hover .sort-arrow { opacity: 0.4; }
+    th.sorted .sort-arrow { opacity: 1; }
+
+    td {
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tr:first-child td { border-top: none; }
+
+    tr:hover td { background: var(--bg-surface-hover); }
+
+    td.col-date {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    td.col-description {
+      white-space: normal;
+      max-width: 400px;
+      word-break: break-word;
+    }
+
+    td.col-amount {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    td.col-amount.negative { color: var(--negative); }
+    td.col-amount.positive { color: var(--positive); }
+
+    td.col-type { text-align: center; }
+
+    .type-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .type-badge.debit { background: var(--negative-light); color: var(--negative); }
+    .type-badge.credit { background: var(--positive-light); color: var(--positive); }
+
+    th.col-amount, td.col-amount-header { text-align: right; }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      background: var(--negative-light);
+      color: var(--negative);
+      border: 1px solid var(--negative);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    .error-msg.visible { display: block; animation: fadeIn 0.2s ease; }
+
+    /* Footer */
+    footer {
+      margin-top: 48px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .app { padding: 0 16px; }
+      .upload-zone { padding: 32px 16px; }
+      .summary { grid-template-columns: 1fr 1fr; }
+      .toolbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <h1>banksheet</h1>
+        <span>v0.1.0</span>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+          <span class="theme-icon">◐</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="upload-title">Drop your bank statement PDF here</div>
+        <div class="upload-subtitle">or <strong id="browseLink">browse files</strong></div>
+        <input type="file" accept=".pdf" class="upload-input" id="fileInput">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+      </div>
+
+      <div class="parsers-bar" id="parsersBar"></div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <section class="results" id="results">
+        <div class="summary" id="summary"></div>
+
+        <div class="toolbar">
+          <div class="toolbar-left" id="toolbarInfo"></div>
+          <div class="export-group">
+            <button class="btn" data-format="csv">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              CSV
+            </button>
+            <button class="btn" data-format="json">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              JSON
+            </button>
+            <button class="btn btn-accent" data-format="excel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th data-col="date" class="sorted">Date <span class="sort-arrow">▲</span></th>
+                  <th data-col="description">Description <span class="sort-arrow">▲</span></th>
+                  <th data-col="amount" class="col-amount">Amount <span class="sort-arrow">▲</span></th>
+                  <th data-col="type">Type <span class="sort-arrow">▲</span></th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      100% local — no data leaves your machine ·
+      <a href="https://github.com/tio-ze-rj/banksheet" target="_blank" rel="noopener">github</a>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

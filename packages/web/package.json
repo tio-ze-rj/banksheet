@@ -1,8 +1,30 @@
 {
   "name": "@banksheet/web",
   "version": "0.1.0",
-  "description": "Bank statement web UI (phase 2)",
+  "description": "Bank statement web UI",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/server.ts",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@banksheet/core": "0.1.0",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.0.0",
+    "@types/supertest": "^6.0.2",
+    "@vitest/coverage-v8": "^1.6.1",
+    "supertest": "^6.3.4",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
   "license": "MIT"
 }

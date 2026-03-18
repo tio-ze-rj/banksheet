@@ -27,7 +27,17 @@ packages/
         parse.ts       # banksheet parse <file> [options]
         list.ts        # banksheet list (show available plugins)
       __tests__/       # E2E tests via child_process (8 tests)
-  web/                 # @banksheet/web — placeholder for phase 2
+  web/                 # @banksheet/web — local web UI (Express + vanilla JS)
+    src/
+      server.ts        # Express app, static files, mounts /api routes
+      routes/
+        parse.ts       # POST /api/parse — multer upload + core parsing
+        export.ts      # POST /api/export — CSV/JSON/Excel download
+        parsers.ts     # GET /api/parsers — list available plugins
+    public/
+      index.html       # Single-page UI (drag-drop upload, table, export)
+      app.js           # Vanilla JS client (no build step)
+    __tests__/         # Supertest integration tests
 reference/             # Original parsing code from perasapi (read-only reference)
 docs/                  # Project documentation
 ```
