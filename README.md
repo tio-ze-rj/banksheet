@@ -1,8 +1,14 @@
-# banksheet
+<p align="center">
+  <img src="assets/banksheet-logo.svg" alt="banksheet" width="400">
+</p>
 
-Parse bank and credit card statement PDFs into CSV, Excel, or JSON. 100% local, no AI, no cloud.
+<p align="center">
+  Parse bank and credit card statement PDFs into CSV, Excel, or JSON. 100% local, no AI, no cloud.
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+</p>
 
 ## Features
 
