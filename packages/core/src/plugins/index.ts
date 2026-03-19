@@ -1,5 +1,6 @@
 import type { BankParser } from '../types';
 import { bradescoCartaoParser } from './BR/bradesco-cartao/index';
+import { c6CartaoParser } from './BR/c6-cartao/index';
 import { interCartaoParser } from './BR/inter-cartao/index';
 import { itauCartaoParser } from './BR/itau-cartao/index';
 import { nubankCartaoParser } from './BR/nubank-cartao/index';
@@ -7,6 +8,7 @@ import { nubankCartaoParser } from './BR/nubank-cartao/index';
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
   bradescoCartaoParser,
+  c6CartaoParser,
   interCartaoParser,
   itauCartaoParser,
   nubankCartaoParser,

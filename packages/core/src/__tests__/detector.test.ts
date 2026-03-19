@@ -17,8 +17,9 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(4);
+    expect(list).toHaveLength(5);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
+    expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Itaú Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Nubank Cartão', country: 'BR' });
@@ -68,6 +69,16 @@ describe('detectBank', () => {
   it('detects Nubank by nubank keyword', () => {
     const result = detectBank('conta Nubank para pagamento', plugins);
     expect(result?.name).toBe('Nubank Cartão');
+  });
+
+  it('detects C6 by C6 Carbon text', () => {
+    const result = detectBank('Cartão C6 Carbon Final 1169', plugins);
+    expect(result?.name).toBe('C6 Cartão');
+  });
+
+  it('detects C6 by C6 Bank text', () => {
+    const result = detectBank('Pagando pela conta C6 Bank', plugins);
+    expect(result?.name).toBe('C6 Cartão');
   });
 
   it('detects Inter by BANCO INTER S/A text', () => {

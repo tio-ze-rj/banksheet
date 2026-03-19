@@ -23,6 +23,7 @@
 | Country | Bank | Statement Type |
 |---------|------|---------------|
 | BR | Bradesco | Credit card |
+| BR | C6 Bank | Credit card |
 | BR | Inter | Credit card |
 | BR | Itaú | Credit card |
 | BR | Nubank | Credit card |
