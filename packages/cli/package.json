@@ -1,6 +1,6 @@
 {
   "name": "@banksheet/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bank statement CLI tool",
   "bin": {
     "banksheet": "dist/index.js"
@@ -9,10 +9,11 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@banksheet/core": "0.1.0",
+    "@banksheet/core": "0.2.0",
     "commander": "^12.0.0"
   },
   "devDependencies": {
@@ -22,5 +23,16 @@
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
   },
+  "files": ["dist", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tio-ze-rj/banksheet.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/tio-ze-rj/banksheet",
+  "bugs": "https://github.com/tio-ze-rj/banksheet/issues",
+  "keywords": ["bank", "statement", "pdf", "parser", "csv", "excel", "finance", "cli", "banksheet"],
+  "author": "tio-ze-rj <rj.tio.ze@gmail.com>",
+  "engines": { "node": ">=18" },
   "license": "MIT"
 }
