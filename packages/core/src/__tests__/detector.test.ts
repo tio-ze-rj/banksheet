@@ -17,16 +17,21 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(5);
+    expect(list).toHaveLength(6);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Itaú Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Nubank Cartão', country: 'BR' });
+    expect(list).toContainEqual({ name: 'Porto Seguro Cartão', country: 'BR' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
     expect(getParserByName('Bradesco Cartão')?.name).toBe('Bradesco Cartão');
+  });
+
+  it('getParserByName finds Porto Seguro Cartão', () => {
+    expect(getParserByName('Porto Seguro Cartão')?.name).toBe('Porto Seguro Cartão');
   });
 });
 
@@ -89,6 +94,21 @@ describe('detectBank', () => {
   it('detects Inter by bancointer.com.br URL', () => {
     const result = detectBank('acesse: www.bancointer.com.br', plugins);
     expect(result?.name).toBe('Inter Cartão');
+  });
+
+  it('detects Porto Seguro by Porto Bank text', () => {
+    const result = detectBank('Porto Bank cartão de crédito', plugins);
+    expect(result?.name).toBe('Porto Seguro Cartão');
+  });
+
+  it('detects Porto Seguro by PORTOSEG text', () => {
+    const result = detectBank('PORTOSEG SA CRED FIN INV - CNPJ 04.862.600/0001-10', plugins);
+    expect(result?.name).toBe('Porto Seguro Cartão');
+  });
+
+  it('detects Porto Seguro by cartaoportoseguro URL', () => {
+    const result = detectBank('www.cartaoportoseguro.com.br', plugins);
+    expect(result?.name).toBe('Porto Seguro Cartão');
   });
 
   it('returns undefined for unknown text', () => {
