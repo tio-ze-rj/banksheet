@@ -30,6 +30,7 @@
 | BR | Inter | Credit card |
 | BR | Itaú | Credit card |
 | BR | Nubank | Credit card |
+| BR | Porto Seguro | Credit card |
 
 Currently covers credit card statements only. More statement types (checking, savings) are welcome — see [Adding a Plugin](#adding-a-plugin).
 
