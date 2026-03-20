@@ -17,13 +17,14 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(6);
+    expect(list).toHaveLength(7);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Itaú Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Nubank Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Porto Seguro Cartão', country: 'BR' });
+    expect(list).toContainEqual({ name: 'PC Financial Mastercard', country: 'CA' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -32,6 +33,10 @@ describe('plugin registry', () => {
 
   it('getParserByName finds Porto Seguro Cartão', () => {
     expect(getParserByName('Porto Seguro Cartão')?.name).toBe('Porto Seguro Cartão');
+  });
+
+  it('getParserByName finds PC Financial Mastercard', () => {
+    expect(getParserByName('PC Financial Mastercard')?.name).toBe('PC Financial Mastercard');
   });
 });
 
@@ -109,6 +114,21 @@ describe('detectBank', () => {
   it('detects Porto Seguro by cartaoportoseguro URL', () => {
     const result = detectBank('www.cartaoportoseguro.com.br', plugins);
     expect(result?.name).toBe('Porto Seguro Cartão');
+  });
+
+  it('detects PC Financial by Presidents Choice Financial text', () => {
+    const result = detectBank("President's Choice Financial Mastercard®", plugins);
+    expect(result?.name).toBe('PC Financial Mastercard');
+  });
+
+  it('detects PC Financial by pcfinancial.ca URL', () => {
+    const result = detectBank('visit www.pcfinancial.ca for details', plugins);
+    expect(result?.name).toBe('PC Financial Mastercard');
+  });
+
+  it('detects PC Financial by PC World Mastercard text', () => {
+    const result = detectBank('PC® World Mastercard®', plugins);
+    expect(result?.name).toBe('PC Financial Mastercard');
   });
 
   it('returns undefined for unknown text', () => {

@@ -5,6 +5,7 @@ import { interCartaoParser } from './BR/inter-cartao/index';
 import { itauCartaoParser } from './BR/itau-cartao/index';
 import { nubankCartaoParser } from './BR/nubank-cartao/index';
 import { portoSeguroCartaoParser } from './BR/porto-seguro-cartao/index';
+import { pcFinancialMastercardParser } from './CA/pc-financial-mastercard/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
@@ -14,6 +15,7 @@ export const plugins: BankParser[] = [
   itauCartaoParser,
   nubankCartaoParser,
   portoSeguroCartaoParser,
+  pcFinancialMastercardParser,
 ];
 
 export function getParserByName(name: string): BankParser | undefined {

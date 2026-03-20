@@ -30,7 +30,7 @@ describe('CLI E2E', () => {
 
     it('shows parser count', async () => {
       const { stdout } = await run(['list']);
-      expect(stdout).toContain('6 parser(s)');
+      expect(stdout).toContain('7 parser(s)');
     });
   });
 
