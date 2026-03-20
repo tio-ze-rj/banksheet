@@ -17,7 +17,7 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(7);
+    expect(list).toHaveLength(8);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
@@ -25,6 +25,7 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Nubank Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Porto Seguro Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'PC Financial Mastercard', country: 'CA' });
+    expect(list).toContainEqual({ name: 'Chase Credit', country: 'US' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -37,6 +38,10 @@ describe('plugin registry', () => {
 
   it('getParserByName finds PC Financial Mastercard', () => {
     expect(getParserByName('PC Financial Mastercard')?.name).toBe('PC Financial Mastercard');
+  });
+
+  it('getParserByName finds Chase Credit', () => {
+    expect(getParserByName('Chase Credit')?.name).toBe('Chase Credit');
   });
 });
 
@@ -129,6 +134,16 @@ describe('detectBank', () => {
   it('detects PC Financial by PC World Mastercard text', () => {
     const result = detectBank('PC® World Mastercard®', plugins);
     expect(result?.name).toBe('PC Financial Mastercard');
+  });
+
+  it('detects Chase by opening/closing date + account number', () => {
+    const result = detectBank('opening/closing date 12/05/24 - 01/04/25\naccount number: 1234', plugins);
+    expect(result?.name).toBe('Chase Credit');
+  });
+
+  it('detects Chase by JPMorgan Chase', () => {
+    const result = detectBank('JPMorgan Chase Bank, N.A.', plugins);
+    expect(result?.name).toBe('Chase Credit');
   });
 
   it('returns undefined for unknown text', () => {

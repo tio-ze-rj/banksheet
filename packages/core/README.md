@@ -4,15 +4,16 @@ Bank statement parsing engine — converts credit card PDF statements into struc
 
 ## Supported Banks
 
-| Bank | Country | Type |
-|------|---------|------|
-| Bradesco | BR | Credit Card |
-| C6 Bank | BR | Credit Card |
-| Inter | BR | Credit Card |
-| Itaú | BR | Credit Card |
-| Nubank | BR | Credit Card |
-| Porto Seguro | BR | Credit Card |
-| PC Financial Mastercard | CA | Credit Card |
+| Bank | Country | Type | Tested with real PDF |
+|------|---------|------|:--------------------:|
+| Bradesco | BR | Credit Card | Yes |
+| C6 Bank | BR | Credit Card | Yes |
+| Inter | BR | Credit Card | Yes |
+| Itaú | BR | Credit Card | Yes |
+| Nubank | BR | Credit Card | Yes |
+| Porto Seguro | BR | Credit Card | Yes |
+| PC Financial Mastercard | CA | Credit Card | Yes |
+| Chase | US | Credit Card | No |
 
 ## Usage
 

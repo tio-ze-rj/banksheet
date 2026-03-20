@@ -10,7 +10,7 @@
   <a href="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml"><img src="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-18%2B-brightgreen.svg" alt="Node.js 18+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-7-orange.svg" alt="7 parsers"></a>
+  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-8-orange.svg" alt="8 parsers"></a>
 </p>
 
 ## Features
@@ -23,15 +23,16 @@
 
 ## Supported Banks
 
-| Country | Bank | Statement Type |
-|---------|------|---------------|
-| BR | Bradesco | Credit card |
-| BR | C6 Bank | Credit card |
-| BR | Inter | Credit card |
-| BR | Itaú | Credit card |
-| BR | Nubank | Credit card |
-| BR | Porto Seguro | Credit card |
-| CA | PC Financial Mastercard | Credit card |
+| Country | Bank | Statement Type | Tested with real PDF |
+|---------|------|---------------|:--------------------:|
+| BR | Bradesco | Credit card | Yes |
+| BR | C6 Bank | Credit card | Yes |
+| BR | Inter | Credit card | Yes |
+| BR | Itaú | Credit card | Yes |
+| BR | Nubank | Credit card | Yes |
+| BR | Porto Seguro | Credit card | Yes |
+| CA | PC Financial Mastercard | Credit card | Yes |
+| US | Chase | Credit card | No |
 
 Currently covers credit card statements only. More statement types (checking, savings) are welcome — see [Adding a Plugin](#adding-a-plugin).
 
@@ -183,9 +184,12 @@ banksheet/
 │   │           │   ├── itau-cartao/
 │   │           │   ├── nubank-cartao/
 │   │           │   └── porto-seguro-cartao/
-│   │           └── CA/         # Canadian bank plugins
+│   │           ├── CA/         # Canadian bank plugins
+│   │           │   ├── utils.ts
+│   │           │   └── pc-financial-mastercard/
+│   │           └── US/         # American bank plugins
 │   │               ├── utils.ts
-│   │               └── pc-financial-mastercard/
+│   │               └── chase-credit/
 │   ├── cli/                    # Command-line interface
 │   └── web/                    # Web UI (Express + vanilla JS)
 ├── package.json
