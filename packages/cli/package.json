@@ -1,6 +1,6 @@
 {
   "name": "@banksheet/cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bank statement CLI tool",
   "bin": {
     "banksheet": "dist/index.js"
@@ -13,7 +13,7 @@
     "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@banksheet/core": "0.2.0",
+    "@banksheet/core": "0.3.0",
     "commander": "^12.0.0"
   },
   "devDependencies": {
