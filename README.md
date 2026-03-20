@@ -10,7 +10,7 @@
   <a href="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml"><img src="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-18%2B-brightgreen.svg" alt="Node.js 18+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-5-orange.svg" alt="5 parsers"></a>
+  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-7-orange.svg" alt="7 parsers"></a>
 </p>
 
 ## Features
@@ -31,6 +31,7 @@
 | BR | Itaú | Credit card |
 | BR | Nubank | Credit card |
 | BR | Porto Seguro | Credit card |
+| CA | PC Financial Mastercard | Credit card |
 
 Currently covers credit card statements only. More statement types (checking, savings) are welcome — see [Adding a Plugin](#adding-a-plugin).
 
@@ -158,7 +159,7 @@ Create a `README.md` in your plugin folder documenting:
 
 ### Tips
 
-- Brazilian plugins share utilities in `plugins/BR/utils.ts` (`parseBRAmount`, `PT_MONTHS`). Each country can create its own shared utils.
+- Each country has shared utilities: `plugins/BR/utils.ts` (`parseBRAmount`, `PT_MONTHS`), `plugins/CA/utils.ts` (`parseCADAmount`, `EN_MONTHS`).
 - Use `pdf-parse` or `pdfjs-dist` to inspect the raw extracted text — it often looks very different from the visual PDF.
 - Negative amounts = expenses, positive = income.
 
@@ -174,12 +175,17 @@ banksheet/
 │   │       ├── types.ts        # BankParser, Transaction interfaces
 │   │       └── plugins/
 │   │           ├── index.ts    # Plugin registry
-│   │           └── BR/         # Brazilian bank plugins
+│   │           ├── BR/         # Brazilian bank plugins
+│   │           │   ├── utils.ts
+│   │           │   ├── bradesco-cartao/
+│   │           │   ├── c6-cartao/
+│   │           │   ├── inter-cartao/
+│   │           │   ├── itau-cartao/
+│   │           │   ├── nubank-cartao/
+│   │           │   └── porto-seguro-cartao/
+│   │           └── CA/         # Canadian bank plugins
 │   │               ├── utils.ts
-│   │               ├── bradesco-cartao/
-│   │               ├── inter-cartao/
-│   │               ├── itau-cartao/
-│   │               └── nubank-cartao/
+│   │               └── pc-financial-mastercard/
 │   ├── cli/                    # Command-line interface
 │   └── web/                    # Web UI (Express + vanilla JS)
 ├── package.json
