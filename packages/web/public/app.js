@@ -7,6 +7,7 @@
   let transactions = [];
   let sortCol = 'date';
   let sortAsc = true;
+  let searchQuery = '';
 
   // DOM refs
   const uploadZone = document.getElementById('uploadZone');
@@ -18,6 +19,7 @@
   const results = document.getElementById('results');
   const summary = document.getElementById('summary');
   const toolbarInfo = document.getElementById('toolbarInfo');
+  const searchInput = document.getElementById('searchInput');
   const tableBody = document.getElementById('tableBody');
   const themeToggle = document.getElementById('themeToggle');
 
@@ -150,9 +152,22 @@
     return '<div class="summary-card"><div class="label">' + label + '</div><div class="value ' + (cls || '') + '">' + value + '</div></div>';
   }
 
+  function getFilteredTransactions() {
+    if (!searchQuery) return transactions;
+    return transactions.filter(function (t) {
+      return (
+        t.description.toLowerCase().indexOf(searchQuery) !== -1 ||
+        t.date.toLowerCase().indexOf(searchQuery) !== -1 ||
+        String(t.amount).indexOf(searchQuery) !== -1 ||
+        t.type.toLowerCase().indexOf(searchQuery) !== -1
+      );
+    });
+  }
+
   // Table
   function renderTable() {
-    var sorted = transactions.slice().sort(comparator(sortCol, sortAsc));
+    var filtered = getFilteredTransactions();
+    var sorted = filtered.slice().sort(comparator(sortCol, sortAsc));
     var html = '';
     sorted.forEach(function (t) {
       var amtClass = t.amount < 0 ? 'negative' : 'positive';
@@ -206,16 +221,25 @@
     };
   }
 
+  // Search
+  if (searchInput) {
+    searchInput.addEventListener('input', function (e) {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderTable();
+    });
+  }
+
   // Export
   document.querySelectorAll('[data-format]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var format = btn.getAttribute('data-format');
-      if (transactions.length === 0) return;
+      var toExport = getFilteredTransactions();
+      if (toExport.length === 0) return;
 
       fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: transactions, format: format }),
+        body: JSON.stringify({ transactions: toExport, format: format }),
       })
         .then(function (r) {
           if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Export failed'); });
