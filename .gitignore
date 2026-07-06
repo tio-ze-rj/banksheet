@@ -9,8 +9,10 @@ coverage/
 CLAUDE.md
 docs/
 .claude/
+.serena/
 .idea/
 reference/
-extrato.pdf
-BradescoCartoes*.pdf
 *-raw.txt
+
+# Real bank statements — NEVER commit (contain personal data)
+*.pdf

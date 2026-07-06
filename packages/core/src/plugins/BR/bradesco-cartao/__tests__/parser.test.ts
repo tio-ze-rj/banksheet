@@ -107,4 +107,78 @@ describe('bradescoCartaoParser', () => {
       expect(txns).toHaveLength(0);
     });
   });
+
+  // Real statement layout: pdfjs extracts space-separated columns and wraps
+  // long descriptions / trailing city across multiple lines, with the amount
+  // sometimes landing on its own line. Two card holders. Regression for the
+  // "calculates wrong with 2 card holders" bug.
+  describe('parse — wrapped multi-line layout (real statement)', () => {
+    const year = new Date().getFullYear();
+
+    const wrappedText = [
+      'Fatura Mensal',
+      'Número do Cartão 0000 XXXXXX 00001',
+      'Lançamentos',
+      'Data Histórico de Lançamentos Cidade US$ Cotação',
+      'do Dólar R$',
+      '08/06 PAG BOLETO BANCARIO 0,80 -',
+      'FULANO DE TAL SILVA Cartão 0000 XXXXXX 00001',
+      '27/05 LOJA EXEMPLO LTDA 01/12 VOLTA',
+      'REDONDA',
+      '324,24',
+      'Total para FULANO DE TAL',
+      'SILVA 324,24',
+      'CICLANA DE TAL SOUZA Cartão 0000 XXXXXX 00002',
+      '25/05 CLINICA EXEMPLO 01/03 SAO PAULO 783,34',
+      'Total para CICLANA DE TAL',
+      'SOUZA 783,34',
+      'Total da fatura em real 1.107,58',
+    ].join('\n');
+
+    it('parses all 3 transactions across both card holders', () => {
+      const txns = bradescoCartaoParser.parse(wrappedText);
+      expect(txns).toHaveLength(3);
+    });
+
+    it('parses the payment (amount with space before trailing dash) as credit', () => {
+      const txns = bradescoCartaoParser.parse(wrappedText);
+      const payment = txns[0];
+      expect(payment.date).toBe(`${year}-06-08`);
+      expect(payment.description).toBe('PAG BOLETO BANCARIO');
+      expect(payment.amount).toBe(0.8);
+      expect(payment.type).toBe('credit');
+    });
+
+    it('parses a transaction whose amount wrapped onto its own line', () => {
+      const txns = bradescoCartaoParser.parse(wrappedText);
+      const wrapped = txns[1];
+      expect(wrapped.date).toBe(`${year}-05-27`);
+      expect(wrapped.description).toBe('LOJA EXEMPLO LTDA 01/12');
+      expect(wrapped.amount).toBe(-324.24);
+      expect(wrapped.type).toBe('debit');
+    });
+
+    it('parses the single-line transaction for the second holder', () => {
+      const txns = bradescoCartaoParser.parse(wrappedText);
+      const single = txns[2];
+      expect(single.date).toBe(`${year}-05-25`);
+      expect(single.description).toBe('CLINICA EXEMPLO 01/03');
+      expect(single.amount).toBe(-783.34);
+      expect(single.type).toBe('debit');
+    });
+
+    it('debit total matches the invoice total (1.107,58)', () => {
+      const txns = bradescoCartaoParser.parse(wrappedText);
+      const debitSum = txns
+        .filter(t => t.type === 'debit')
+        .reduce((sum, t) => sum + t.amount, 0);
+      expect(debitSum).toBeCloseTo(-1107.58, 2);
+    });
+
+    it('does not treat "Total para" subtotals as transactions', () => {
+      const txns = bradescoCartaoParser.parse(wrappedText);
+      const descriptions = txns.map(t => t.description);
+      expect(descriptions.some(d => /Total para/i.test(d))).toBe(false);
+    });
+  });
 });

@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# banksheet pre-commit hook — blocks personal data from entering this public repo.
+#
+# Checks staged changes for:
+#   1. Bank-statement PDFs (real statements — must never be committed).
+#   2. Personal data leaking into source/test fixtures: known real names,
+#      Brazilian CPF numbers, and full (unmasked) card numbers.
+#
+# Bypass (use only when you are certain the match is a false positive):
+#   git commit --no-verify
+#
+# This hook is versioned in .githooks/ and wired via `git config core.hooksPath`.
+# Run `npm run hooks:install` (or the command in .githooks/install.sh) after clone.
+
+set -euo pipefail
+
+fail=0
+red()  { printf '\033[31m%s\033[0m\n' "$1"; }
+yellow() { printf '\033[33m%s\033[0m\n' "$1"; }
+
+# Staged files (added/copied/modified), NUL-safe.
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+# --- 1. Block bank-statement PDFs --------------------------------------------
+pdfs=$(printf '%s\n' "$staged" | grep -iE '\.pdf$' || true)
+if [ -n "$pdfs" ]; then
+  red "✖ Refusing to commit PDF file(s) — bank statements contain personal data:"
+  printf '    %s\n' $pdfs
+  yellow "  If this PDF is genuinely non-sensitive, bypass with: git commit --no-verify"
+  fail=1
+fi
+
+# --- 2. Scan staged text/source for personal data ----------------------------
+# Only scan text-ish files we actually ship or test.
+scan_files=$(printf '%s\n' "$staged" | grep -iE '\.(ts|tsx|js|jsx|json|md|txt|csv)$' || true)
+
+# Known real identifiers that have appeared in this project's history. Add to
+# this list if you ever spot another real value; anonymize the source first.
+name_pattern='MARCUS GABRIEL|GABRIEL DO AMAR|DO AMARAL|REJANE SOARES|SOARES MARQUES|SYLVIA H DE ANTONIO|MIGUEL ATTA|MORADA DO CASTELO'
+
+# Structural PII patterns:
+#   - CPF: 000.000.000-00
+#   - Full 16-digit card number (4 groups of 4), NOT masked with X.
+cpf_pattern='[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}'
+card_pattern='\b[0-9]{4}[ -][0-9]{4}[ -][0-9]{4}[ -][0-9]{4}\b'
+
+for f in $scan_files; do
+  # Read the STAGED content (not the working tree) so the check matches what
+  # is actually being committed.
+  content=$(git show ":$f" 2>/dev/null || true)
+  [ -z "$content" ] && continue
+
+  if hits=$(printf '%s' "$content" | grep -nEi "$name_pattern" || true); [ -n "$hits" ]; then
+    red "✖ Possible real name in $f:"; printf '    %s\n' "$hits"; fail=1
+  fi
+  if hits=$(printf '%s' "$content" | grep -nE "$cpf_pattern" || true); [ -n "$hits" ]; then
+    red "✖ Possible CPF number in $f:"; printf '    %s\n' "$hits"; fail=1
+  fi
+  if hits=$(printf '%s' "$content" | grep -nE "$card_pattern" || true); [ -n "$hits" ]; then
+    red "✖ Possible full card number in $f (mask with X — e.g. 0000 XXXXXX 0000):"
+    printf '    %s\n' "$hits"; fail=1
+  fi
+done
+
+if [ "$fail" -ne 0 ]; then
+  echo
+  yellow "Commit blocked. Anonymize test fixtures with placeholder data"
+  yellow "(FULANO DE TAL / JANE SAMPLE, 0000 XXXXXX 0000) and try again."
+  exit 1
+fi
+
+exit 0

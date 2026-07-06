@@ -22,10 +22,10 @@ describe('nubankCartaoParser', () => {
 
   describe('parse', () => {
     const sampleText = [
-      'MARCUS GABRIEL DO AMARAL DE ANTONIO',
+      'FULANO DE TAL SILVA',
       'FATURA 09 MAR 2026 EMISSÃO E ENVIO 02 MAR 2026',
       'TRANSAÇÕES DE 02 FEV A 02 MAR',
-      'Marcus G A Antonio R$ 202,89',
+      'Fulano D T Silva R$ 202,89',
       '05 FEV IOF de "Forwardemail.Net" R$ 6,86',
       '05 FEV •••• 7245 Forwardemail.Net',
       'USD 36.00',
@@ -78,7 +78,7 @@ describe('nubankCartaoParser', () => {
     it('skips card holder total line', () => {
       const txns = nubankCartaoParser.parse(sampleText);
       const descriptions = txns.map(t => t.description);
-      expect(descriptions).not.toContain('Marcus G A Antonio');
+      expect(descriptions).not.toContain('Fulano D T Silva');
     });
 
     it('skips category header line', () => {

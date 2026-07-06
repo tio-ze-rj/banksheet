@@ -16,13 +16,16 @@ ITAUUNIBANCOHOLDINGS.A. - 60.872.504/0001-23
 12/02PETLOVE*Order211173,61
 `;
 
-// Same installment transaction repeated (simulates "próximas faturas" section)
+// Current charges, then a trailing "próximas faturas" run (parcela >= 2),
+// then the "Limite total de crédito" marker — the real statement shape. The
+// NETFLIX line (non-installment) separates current from the future run.
 const TEXT_WITH_FUTURE = `
 ITAUUNIBANCOHOLDINGS.A.
 09/02PROQUALITYP-CT U 01/03169,90
-24/01LOJASRENNER-CT1802/03171,70
+04/02NETFLIX.COM44,90
 09/02PROQUALITYP-CT U 02/03169,90
-24/01LOJASRENNER-CT1803/03171,70
+24/01LOJASRENNER-CT1802/03171,70
+Limite total de crédito
 `;
 
 const TEXT_WITH_IOF = `
@@ -139,17 +142,26 @@ describe('Itaú Cartão Parser', () => {
     });
   });
 
-  describe('deduplication - próximas faturas', () => {
-    it('removes duplicate installment transactions', () => {
+  describe('excludes próximas faturas - future installment run', () => {
+    it('keeps the current first installment (parcela 1)', () => {
       const txns = itauCartaoParser.parse(TEXT_WITH_FUTURE);
       const proquality = txns.filter(t => t.description === 'PROQUALITYP-CT U');
       expect(proquality).toHaveLength(1);
+      expect(proquality[0].amount).toBe(-169.9);
     });
 
-    it('removes duplicate even with different installment number', () => {
+    it('drops the trailing future installment run (parcela >= 2)', () => {
       const txns = itauCartaoParser.parse(TEXT_WITH_FUTURE);
-      const renner = txns.filter(t => t.description === 'LOJASRENNER-CT');
-      expect(renner).toHaveLength(1);
+      // The second PROQUALITY (02/03) and LOJASRENNER (02/03) are the future run.
+      expect(txns.filter(t => t.description === 'LOJASRENNER-CT')).toHaveLength(0);
+      // Only the current PROQUALITY + NETFLIX remain.
+      const total = txns.reduce((sum, t) => sum + t.amount, 0);
+      expect(total).toBeCloseTo(-214.8, 2); // -169.90 - 44.90
+    });
+
+    it('keeps non-installment current charges', () => {
+      const txns = itauCartaoParser.parse(TEXT_WITH_FUTURE);
+      expect(txns.find(t => t.description === 'NETFLIX.COM')).toBeDefined();
     });
   });
 
@@ -160,6 +172,83 @@ describe('Itaú Cartão Parser', () => {
       expect(iof).toBeDefined();
       expect(iof!.amount).toBe(-30);
       expect(iof!.type).toBe('debit');
+    });
+  });
+
+  // Real-statement layout: pdfjs extracts space-separated columns, and the
+  // "Compras parceladas - próximas faturas" (future installments) block appears
+  // as a trailing run of installment lines (parcela >= 2) right before the
+  // "Limite total de crédito" marker. These are NOT part of the current invoice
+  // and must be excluded, or the total is inflated (regression: summed future
+  // expenses → 17.153,64 instead of the correct 16.153,55).
+  describe('parse - excludes próximas faturas (trailing installment run)', () => {
+    // Space-separated real layout. Current charges, then the future block.
+    const STATEMENT = [
+      'Banco Itaú S.A. 341-7',
+      'ITAU UNIBANCO HOLDING S.A.',
+      // --- current charges ---
+      '11/05 PROQUALITY P-CT U 02/03 169,90',   // current installment (parcela 2/3)
+      '02/06 AWS Brazil 120,27',
+      '03/06 ANUIDADE DIFERENCI 02/12 105,00',  // current installment (parcela 2/12)
+      '02/07 ESTORNO DE ANUIDADE DIF - 52,50',  // current credit (non-installment)
+      // --- Compras parceladas - próximas faturas (trailing installment run) ---
+      '11/05 PROQUALITY P-CT U 03/03 169,90',   // future (parcela 3/3)
+      '03/06 ANUIDADE DIFERENCI 03/12 105,00',  // future (parcela 3/12)
+      '06/06 ART MINAS -CT 02/02 156,45',       // future (parcela 2/2)
+      '22/06 RAIA2259 -CT 02/02 261,08',        // future (parcela 2/2)
+      // --- section marker: everything above this in the trailing run is future ---
+      'Limite total de crédito',
+      'Total dos lançamentos atuais 447,67',
+      'Total para próximas faturas 692,58',
+    ].join('\n');
+
+    it('does not count the trailing future-installment run', () => {
+      const txns = itauCartaoParser.parse(STATEMENT);
+      const total = txns.reduce((sum, t) => sum + t.amount, 0);
+      // Current only: -169,90 -120,27 -105,00 +52,50 = -342,67
+      expect(total).toBeCloseTo(-342.67, 2);
+    });
+
+    it('keeps the current installment but drops its future occurrence', () => {
+      const txns = itauCartaoParser.parse(STATEMENT);
+      const proquality = txns.filter(t => t.description.includes('PROQUALITY'));
+      expect(proquality).toHaveLength(1);
+      const anuidade = txns.filter(t => t.description.includes('ANUIDADE') && t.type === 'debit');
+      expect(anuidade).toHaveLength(1);
+    });
+
+    it('keeps current non-installment charges before the future run', () => {
+      const txns = itauCartaoParser.parse(STATEMENT);
+      expect(txns.find(t => t.description.includes('AWS Brazil'))).toBeDefined();
+      expect(txns.find(t => t.description.includes('ESTORNO'))).toBeDefined();
+    });
+
+    it('drops future-only installments that have no current counterpart', () => {
+      const txns = itauCartaoParser.parse(STATEMENT);
+      // ART MINAS and RAIA2259 only appear in the future run.
+      expect(txns.find(t => t.description.includes('ART MINAS'))).toBeUndefined();
+      expect(txns.find(t => t.description.includes('RAIA2259'))).toBeUndefined();
+    });
+
+    // Regression for the code-review HIGH finding: a statement whose genuinely
+    // last charge is a mid-cycle installment (parcela >= 2) with NO future block
+    // after it must NOT have that charge dropped. Reconciliation against the
+    // printed "Total dos lançamentos atuais" keeps it because the books already
+    // balance, so nothing is popped.
+    const NO_FUTURE_BLOCK = [
+      'ITAU UNIBANCO HOLDING S.A.',
+      '02/06 AWS Brazil 120,27',
+      '03/06 ANUIDADE DIFERENCI 02/12 105,00', // last line IS a parcela-2 current charge
+      'Limite total de crédito',
+      'Total dos lançamentos atuais 225,27', // 120,27 + 105,00
+    ].join('\n');
+
+    it('keeps a trailing current installment when there is no future block', () => {
+      const txns = itauCartaoParser.parse(NO_FUTURE_BLOCK);
+      const total = txns.reduce((sum, t) => sum + t.amount, 0);
+      expect(total).toBeCloseTo(-225.27, 2);
+      expect(txns.find(t => t.description.includes('ANUIDADE'))).toBeDefined();
+      expect(txns).toHaveLength(2);
     });
   });
 });

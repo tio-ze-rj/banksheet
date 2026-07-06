@@ -8,9 +8,14 @@
     "build": "npm run build --workspace=packages/core && npm run build --workspace=packages/cli --workspace=packages/web --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:coverage": "npm run test:coverage --workspaces --if-present",
-    "dev": "npm run dev --workspace=packages/cli"
+    "dev": "npm run dev --workspace=packages/cli",
+    "hooks:install": "bash .githooks/install.sh",
+    "prepare": "bash .githooks/install.sh"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "headroom-ai": "^0.22.4"
   }
 }
