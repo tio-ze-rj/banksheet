@@ -111,6 +111,9 @@
       .then(function (data) {
         progressBar.style.width = '100%';
         transactions = data.transactions;
+        // A new statement starts unfiltered
+        searchQuery = '';
+        if (searchInput) searchInput.value = '';
         renderSummary(data);
         renderTable();
         results.classList.add('visible');
@@ -233,13 +236,14 @@
   document.querySelectorAll('[data-format]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var format = btn.getAttribute('data-format');
-      var toExport = getFilteredTransactions();
-      if (toExport.length === 0) return;
+      // Always export the whole statement: the search only narrows the table
+      // view, and a silently partial export would not match the summary totals.
+      if (transactions.length === 0) return;
 
       fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: toExport, format: format }),
+        body: JSON.stringify({ transactions: transactions, format: format }),
       })
         .then(function (r) {
           if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Export failed'); });
