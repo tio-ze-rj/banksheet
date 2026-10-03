@@ -13,7 +13,7 @@
     "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@banksheet/core": "*",
+    "@banksheet/core": "^0.4.2",
     "commander": "^12.0.0"
   },
   "devDependencies": {
