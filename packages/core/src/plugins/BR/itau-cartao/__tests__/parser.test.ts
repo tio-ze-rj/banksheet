@@ -251,4 +251,52 @@ describe('Itaú Cartão Parser', () => {
       expect(txns).toHaveLength(2);
     });
   });
+
+  describe('two-column layout (pdfjs merges both columns into one line)', () => {
+    // Fictional data. Each physical line carries a left- and a right-column
+    // transaction; summary labels and the "próximas faturas" block share lines
+    // with current charges.
+    const TWO_COL = `
+Banco Itaú
+Lançamentos: compras e saques Lançamentos: compras e saques
+FULANO DE TAL (final 1111) 14/09 LOJA ALFA 87,90
+02/09 PADARIA BETA 36,70 16/09 PADARIA BETA 10,90
+09/09 SEGURO GAMA 413,83 19/09 APPLE.COM/BILL 2,90
+09/09 SEGURO GAMA - 413,83 19/09 LOJA DELTA 01/02 157,01
+Lançamentos no cartão (final 1111) 1.000,00 14/09 SHOPEE *EPSILON 195,23
+14/09 SHOPEE *ZETA - 174,3215/08 SHOPEE *ETA - 0,01
+16/09 MERCADOLIVRE*TETA 195,2121/08 LOJA IOTA 02/03 190,68
+17/09 MERCADOLIVRE*KAPA 259,90 Lançamentos no cartão (final 2222) 8.144,53
+VESTUÁRIO . 02/09 SERVICO LAMBDA 30,14
+Lançamentos: produtos e serviços25/09 DROGARIA MU 36,47
+26/09 DOCE NU 47,00 02/09 99* 19,70
+LOCAL L Total dos lançamentos atuais 1.240,56
+ALIMENTAÇÃO .RESENDE Compras parceladas - próximas faturas28/09 PG *XI 9,00 DATA ESTABELECIMENTO VALOR EM R$
+VEÍCULOS .SAO PAULO 21/08 LOJA IOTA 03/03 190,68
+28/09 DROGARIA OMICRON 123,75 19/09 LOJA DELTA 02/02 157,01
+29/09 DL*99 RIDE 12,40 Próxima fatura 347,69
+`;
+
+    it('extracts every transaction on a merged line, with its own amount', () => {
+      const txns = itauCartaoParser.parse(TWO_COL);
+      const kapa = txns.find(t => t.description.includes('KAPA'));
+      expect(kapa?.amount).toBeCloseTo(-259.9);
+      expect(txns.some(t => Math.abs(t.amount) === 8144.53)).toBe(false);
+      expect(txns.find(t => t.description.includes('EPSILON'))?.amount).toBeCloseTo(-195.23);
+      expect(txns.find(t => t.description.includes('TETA'))?.amount).toBeCloseTo(-195.21);
+      expect(txns.find(t => t.description.includes('ZETA'))?.amount).toBeCloseTo(174.32);
+      expect(txns.find(t => t.description.includes('MU'))?.amount).toBeCloseTo(-36.47);
+      expect(txns.find(t => t.description.includes('PG *XI'))?.amount).toBeCloseTo(-9);
+      expect(txns.find(t => t.description === '99*')?.amount).toBeCloseTo(-19.7);
+    });
+
+    it('excludes the interleaved próximas faturas block and matches the printed total', () => {
+      const txns = itauCartaoParser.parse(TWO_COL);
+      const total = txns.reduce((s, t) => s + t.amount, 0);
+      expect(Math.abs(total)).toBeCloseTo(1240.56, 2);
+      expect(txns.filter(t => t.description.includes('IOTA'))).toHaveLength(1);
+      expect(txns.filter(t => t.description.includes('DELTA'))).toHaveLength(1);
+    });
+  });
 });
+

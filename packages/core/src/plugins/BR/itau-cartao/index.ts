@@ -17,87 +17,77 @@ export const itauCartaoParser: BankParser = {
   parse(text: string): Transaction[] {
     const currentYear = new Date().getFullYear();
 
-    const dateLineRegex = /^\d{2}\/\d{2}(?!\/)/;
-    // Installment tail. Amount may be glued (…02/03169,90) or space-separated
-    // (…02/12 105,00), so allow optional whitespace before the amount.
-    const withInstallmentRegex = /(\d{2})\/(\d{2})\s*(\d{1,3}(?:\.\d{3})*,\d{2})$/;
-    const simpleAmountRegex = /(- ?)?(\d{1,3}(?:\.\d{3})*,\d{2})$/;
+    // A transaction segment: DD/MM, description, optional installment NN/NN,
+    // optional "-" (credit) and the amount. Itaú prints two columns side by
+    // side and pdfjs merges them into a single line, so one line can carry
+    // several segments — sometimes glued ("174,3215/08 …") or preceded by a
+    // label ("…serviços25/09 …"). Scan every segment instead of reading only
+    // the line's trailing amount, which would pick up the other column's value.
+    const segmentRegex =
+      /(?<=^|\s|,\d{2}|[A-Za-zÀ-ÿ])(\d{2})\/(\d{2})(?![/\d])\s*(.+?)\s*(?:(\d{2})\/(\d{2})\s*)?(-\s?)?(\d{1,3}(?:\.\d{3})*,\d{2})(?=\s|$|\d{2}\/\d{2})/g;
+    // Start of the "Compras parceladas - próximas faturas" block.
+    const futureMarkerRegex = /Compras parceladas\s*-\s*pr[óo]ximas\s*faturas/i;
 
     // A parsed transaction carries the installment number (0 = not an
-    // installment) so we can later strip the "próximas faturas" trailing run.
+    // installment) and whether it appears after the future-installments marker,
+    // so the "próximas faturas" block can be stripped later.
     interface ParsedTxn extends Transaction {
       installmentNum: number;
+      afterFutureMarker: boolean;
     }
 
-    // pdfjs sometimes bleeds a single stray column letter onto the front of a
-    // transaction row (e.g. "L27/06 MERCADOLIVRE..." from the "Lançamentos"
-    // header column). Strip a lone leading letter that directly precedes a
-    // DD/DD date so the row is recognised as a transaction.
-    const allLines = text
-      .split('\n')
-      .map((line: string) => line.trim())
-      .map((line: string) => line.replace(/^[A-Za-z](?=\d{2}\/\d{2}(?!\/))/, ''));
+    const allLines = text.split('\n').map((line: string) => line.trim());
 
+    let futureMarkerSeen = false;
     const parsed: ParsedTxn[] = allLines.flatMap((line: string): ParsedTxn[] => {
-      if (!dateLineRegex.test(line) || line.length <= 5) return [];
+      const markerMatch = line.match(futureMarkerRegex);
+      const markerIndex = markerMatch ? markerMatch.index! : -1;
+      const lineStartsAfterMarker = futureMarkerSeen;
+      if (markerMatch) futureMarkerSeen = true;
 
-      let isNegative = false;
-      let rawAmount: string;
-      let descEnd: number;
-      let installmentNum = 0;
+      return [...line.matchAll(segmentRegex)].flatMap((m): ParsedTxn[] => {
+        const [, day, month, rawDesc, instA, instB, negSign, rawAmount] = m;
+        if (!/[A-Za-z*]/.test(rawDesc)) return [];
 
-      // Try installment pattern first: ...NN/NN[ ]value
-      const instMatch = line.match(withInstallmentRegex);
-      if (instMatch) {
-        const instNum = parseInt(instMatch[1], 10);
-        const instTotal = parseInt(instMatch[2], 10);
-        if (instNum >= 1 && instTotal >= 1 && instNum <= instTotal && instTotal <= 99) {
-          rawAmount = instMatch[3];
-          descEnd = instMatch.index!;
-          installmentNum = instNum;
-        } else {
-          const simpleMatch = line.match(simpleAmountRegex);
-          if (!simpleMatch) return [];
-          isNegative = !!simpleMatch[1];
-          rawAmount = simpleMatch[2];
-          descEnd = simpleMatch.index!;
+        let installmentNum = 0;
+        let descPart = rawDesc;
+        if (instA && instB) {
+          const instNum = parseInt(instA, 10);
+          const instTotal = parseInt(instB, 10);
+          if (instNum >= 1 && instTotal >= 1 && instNum <= instTotal && instTotal <= 99) {
+            installmentNum = instNum;
+          } else {
+            descPart = `${rawDesc} ${instA}/${instB}`;
+          }
         }
-      } else {
-        const simpleMatch = line.match(simpleAmountRegex);
-        if (!simpleMatch) return [];
-        isNegative = !!simpleMatch[1];
-        rawAmount = simpleMatch[2];
-        descEnd = simpleMatch.index!;
-      }
 
-      const numericAmount = parseBRAmount(rawAmount);
+        const isNegative = !!negSign;
+        const numericAmount = parseBRAmount(rawAmount);
 
-      // Credit card: positive in statement = expense (negative amount)
-      // Negative in statement = refund/credit (positive amount)
-      const amount = isNegative ? numericAmount : -numericAmount;
-      const type = isNegative ? 'credit' as const : 'debit' as const;
+        // Credit card: positive in statement = expense (negative amount)
+        // Negative in statement = refund/credit (positive amount)
+        const amount = isNegative ? numericAmount : -numericAmount;
+        const type = isNegative ? 'credit' as const : 'debit' as const;
 
-      // Parse date: DD/MM -> YYYY-MM-DD
-      const [day, month] = line.substring(0, 5).split('/');
-      const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const date = `${currentYear}-${month}-${day}`;
 
-      // Description: between date (5 chars) and the tail match
-      let descPart = line.substring(5, descEnd).trim();
+        // Clean trailing digits (card-final numbers, installment counts)
+        descPart = descPart.trim().replace(/\d+$/, '').trim();
+        // Remove trailing dash from negative prefix residue
+        descPart = descPart.replace(/-$/, '').trim();
 
-      // Clean trailing digits (card-final numbers, installment counts)
-      descPart = descPart.replace(/\d+$/, '').trim();
-      // Remove trailing dash from negative prefix residue
-      descPart = descPart.replace(/-$/, '').trim();
-
-      return [{
-        date,
-        description: descPart,
-        amount,
-        currency: 'BRL',
-        type,
-        raw: line,
-        installmentNum,
-      }];
+        return [{
+          date,
+          description: descPart,
+          amount,
+          currency: 'BRL',
+          type,
+          raw: m[0],
+          installmentNum,
+          afterFutureMarker:
+            lineStartsAfterMarker || (markerIndex >= 0 && m.index! > markerIndex),
+        }];
+      });
     });
 
     // Itaú international transactions include an IOF surcharge line that isn't
@@ -117,7 +107,7 @@ export const itauCartaoParser: BankParser = {
     // own printed control total ("Total dos lançamentos atuais"): pop trailing
     // installment lines only while the running current-total still exceeds the
     // printed figure. When the sums already agree, nothing is dropped.
-    const kept: ParsedTxn[] = [...parsed];
+    let kept: ParsedTxn[] = [...parsed];
     const printedTotalMatch = text.match(
       /Total dos lan[çc]amentos atuais\s*(\d{1,3}(?:\.\d{3})*,\d{2})/i,
     );
@@ -127,8 +117,23 @@ export const itauCartaoParser: BankParser = {
       // Expenses are stored as negative amounts; the printed total is a positive
       // magnitude. Compare magnitudes of the summed charges (+ IOF surcharge).
       const printedTotal = parseBRAmount(printedTotalMatch[1]);
-      const currentMagnitude = (): number =>
-        Math.abs(kept.reduce((sum, t) => sum + t.amount, 0) - iofAmount);
+      const magnitudeOf = (txns: ParsedTxn[]): number =>
+        Math.abs(txns.reduce((sum, t) => sum + t.amount, 0) - iofAmount);
+      const currentMagnitude = (): number => magnitudeOf(kept);
+
+      // Two-column layout: the future block is interleaved with current
+      // charges, so it is not a trailing run. When the marker is present, drop
+      // the installments (parcela >= 2) that follow it — provided that makes
+      // the books balance.
+      const withoutMarked = kept.filter(
+        t => !(t.afterFutureMarker && t.installmentNum >= 2),
+      );
+      if (
+        withoutMarked.length < kept.length &&
+        Math.abs(magnitudeOf(withoutMarked) - printedTotal) <= 0.005
+      ) {
+        kept = withoutMarked;
+      }
 
       // Only ever pop future installment lines (parcela >= 2), never a
       // non-installment current charge. Stop as soon as the books balance — so a
@@ -149,7 +154,7 @@ export const itauCartaoParser: BankParser = {
       }
     }
 
-    const transactions: Transaction[] = kept.map(({ installmentNum: _n, ...t }) => t);
+    const transactions: Transaction[] = kept.map(({ installmentNum: _n, afterFutureMarker: _f, ...t }) => t);
 
     if (iofMatch) {
       transactions.push({
