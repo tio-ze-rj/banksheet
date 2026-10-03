@@ -1,6 +1,6 @@
 {
   "name": "@banksheet/core",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Bank statement parsing engine",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
