@@ -9,7 +9,8 @@ export interface Transaction {
   raw?: string;            // Original line from PDF (debugging)
 
   // Optional fields for importers (e.g. Firefly III). Parsers set them when the
-  // statement provides the information; the JSON export includes them.
+  // statement provides the information; CSV/Excel exports only include a column
+  // when at least one transaction has a value for it.
   account?: string;        // Account the statement line belongs to
   counterAccount?: string; // Other own account involved (transfers, card payments)
   payee?: string;          // Merchant / counterparty that is not an own account
