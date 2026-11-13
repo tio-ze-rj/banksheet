@@ -7,9 +7,13 @@ import { nubankCartaoParser } from './BR/nubank-cartao/index';
 import { portoSeguroCartaoParser } from './BR/porto-seguro-cartao/index';
 import { pcFinancialMastercardParser } from './CA/pc-financial-mastercard/index';
 import { chaseCreditParser } from './US/chase-credit/index';
+import { openbankCreditoParser } from './MX/openbank-credito/index';
+import { openbankDebitoParser } from './MX/openbank-debito/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
+  openbankDebitoParser,
+  openbankCreditoParser,
   bradescoCartaoParser,
   c6CartaoParser,
   interCartaoParser,
